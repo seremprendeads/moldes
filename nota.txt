@@ -1,0 +1,90 @@
+npm uninstall tailwindcss
+npm install -D tailwindcss@3 postcss autoprefixer
+npx tailwindcss init -p
+
+
+tailwind.config.js
+module.exports = {
+  content: ["./index.html"],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+
+
+postcss.config.js
+
+Crear: 
+index.html (Crear)
+
+dist/output.css (Se Crea Solo)
+
+src/input.css (Crear)
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+npx tailwindcss -i ./src/input.css -o ./dist/output.css --watch
+npx tailwindcss -i ./src/input.css  -o ./dist/output.css --minify
+
+
+Git:
+ 1. Subir un proyecto a GitHub desde cero
+
+git init                                                    # Inicializa el repositorio local
+git remote add origin https://github.com/USUARIO/REPO.git   # Vincula con GitHub
+git add .                                                   # Agrega todos los archivos
+git commit -m "Primer commit"                               # Crea el primer commit
+git branch -M master                                        # (Opcional) Asegura que la rama sea 'master'
+git push -u origin master                                   # Sube a GitHub por primera vez
+
+
+
+
+2. Subir cambios al proyecto ya existente
+Cada vez que modificás algo (como HTML, JS, CSS compilado, etc.):
+
+
+git add .                                      # Agrega los cambios
+git commit -m "Descripción de los cambios"     # Crea un commit con mensaje
+git push                                       # Sube los cambios a GitHub
+
+
+
+
+imagens links:
+
+Header Logo:
+https://res.cloudinary.com/dliredzt9/image/upload/v1746556540/logo_negro_moldesa_vudjsr.png
+
+Hero imagen:
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220863/hero_xunnzn.png
+
+Nosotros:
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220863/hero_xunnzn.png
+
+Moldes Revestimiento:
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220852/mar-del-plata_effida.webp
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220845/marmol_xkc5ez.webp
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220838/sol_vd521c.webp
+
+Moldes Cilorraso:
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220852/mediterraneo-autoportante_b3ngnz.webp
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220845/pompeya-sin-encastre_xriwdw.jpg
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220840/meteor-sin-encatre_yuhrwq.jpg
+
+Frisos/Baguetiones:
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220846/bagueton-n2_zi64cj.webp
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220852/moldura-mas-bagueton-doble_stj1i7.webp
+
+Accessorios:
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220845/porosil_f2d9zh.webp
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220845/porosil_f2d9zh.webp
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220851/Rokka_lifjqr.webp
+https://res.cloudinary.com/dliredzt9/image/upload/v1746220847/Hilo_pwxlyb.webp
+
+footer Logo:
+https://res.cloudinary.com/dliredzt9/image/upload/v1746556540/logo_negro_moldesa_vudjsr.png
