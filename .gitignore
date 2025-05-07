@@ -1,1 +1,16 @@
 node_modules/
+# Dependencias
+node_modules/
+
+# Archivos de producción
+dist/
+build/
+
+# Archivos temporales
+*.log
+*.tmp
+.DS_Store
+.env
+
+# VSCode settings
+.vscode/
