@@ -1,5 +1,4 @@
-<script>
-  function sendToWhatsApp() {
+ function sendToWhatsApp() {
     const name = document.getElementById("name").value;
     const email = document.getElementById("email").value;
     const message = document.getElementById("message").value;
@@ -10,4 +9,4 @@
     const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   }
-</script>
+
