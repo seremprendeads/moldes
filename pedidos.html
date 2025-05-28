@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tareas 📦</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 min-h-screen flex flex-col">
+
+  <header class="bg-blue-600 text-white py-6 text-center">
+    <h1 class="text-3xl font-bold">tareas 📦</h1>
+  </header>
+
+  <main class="flex-1 p-6 max-w-4xl mx-auto w-full">
+    <form id="task-form" class="flex flex-col sm:flex-row gap-4 mb-6">
+      <textarea
+        id="task-input"
+        placeholder="Escribe un pedido o tarea..."
+        required
+        class="flex-1 p-3 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y"
+        rows="2"
+      ></textarea>
+      <button
+        type="submit"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold p-3 rounded transition self-start"
+      >
+        Agregar
+      </button>
+    </form>
+
+    <ul id="task-list" class="space-y-6">
+      <!-- Las tareas aparecerán aquí -->
+    </ul>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      onSnapshot,
+      updateDoc,
+      deleteDoc,
+      doc,
+      Timestamp
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC26tExI2Qzm_dczDvGRx58M_9b4qD3Ajw",
+      authDomain: "tareas-d2893.firebaseapp.com",
+      projectId: "tareas-d2893",
+      storageBucket: "tareas-d2893.appspot.com",
+      messagingSenderId: "930777625775",
+      appId: "1:930777625775:web:347b4c3814d99d163ad05a",
+      measurementId: "G-N1WRTWBEBM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const taskForm = document.getElementById('task-form');
+    const taskInput = document.getElementById('task-input');
+    const taskList = document.getElementById('task-list');
+
+    // Función para formatear fecha a DD/MM/AAAA
+    function formatDate(date) {
+      return date.toLocaleDateString('es-ES', {
+        day:   '2-digit',
+        month: '2-digit',
+        year:  'numeric'
+      });
+    }
+
+    onAuthStateChanged(auth, user => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      // Escucha en tiempo real
+      onSnapshot(collection(db, "tareas"), snapshot => {
+        taskList.innerHTML = "";
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          addTask(
+            docSnap.id,
+            data.text,
+            data.status,
+            data.fecha ? formatDate(data.fecha.toDate()) : ""
+          );
+        });
+      });
+
+      // Agregar tarea con fecha actual
+      taskForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = taskInput.value.trim();
+        if (!text) return;
+        await addDoc(collection(db, "tareas"), {
+          text,
+          status: "Pendiente",
+          fecha: Timestamp.fromDate(new Date())
+        });
+        taskInput.value = "";
+      });
+    });
+
+    function addTask(id, text, status = "Pendiente", fechaText = "") {
+      const li = document.createElement("li");
+      li.className = "bg-white p-4 rounded shadow space-y-4";
+
+      const top = document.createElement("div");
+      top.className = "flex flex-col sm:flex-row justify-between items-center gap-4";
+
+      // Contenedor texto + fecha
+      const textContainer = document.createElement("div");
+      textContainer.className = "flex-1 space-y-1";
+      const spanText = document.createElement("span");
+      spanText.innerHTML = text.replace(/\n/g, "<br>");
+      spanText.className = "block font-semibold";
+      textContainer.appendChild(spanText);
+
+      if (fechaText) {
+        const spanFecha = document.createElement("span");
+        spanFecha.textContent = fechaText;
+        spanFecha.className = "text-sm text-gray-500";
+        textContainer.appendChild(spanFecha);
+      }
+
+      // Select estado
+      const select = document.createElement("select");
+      ["Pendiente", "Haciendo", "Pausado", "Terminado", "Enviado"].forEach(opt => {
+        const o = document.createElement("option");
+        o.value = opt;
+        o.textContent = opt;
+        select.appendChild(o);
+      });
+      select.value = status;
+      select.className = "p-2 rounded border border-gray-300";
+
+      select.addEventListener("change", async () => {
+        await updateDoc(doc(db, "tareas", id), { status: select.value });
+        updateProgressBar(progressBar, select.value);
+      });
+
+      // Botón borrar
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Borrar";
+      deleteBtn.className = "bg-red-500 hover:bg-red-600 text-white p-2 rounded";
+      deleteBtn.addEventListener("click", async () => {
+        await deleteDoc(doc(db, "tareas", id));
+      });
+
+      top.append(textContainer, select, deleteBtn);
+
+      // Barra de progreso
+      const progCont = document.createElement("div");
+      progCont.className = "w-full h-4 bg-gray-200 rounded overflow-hidden";
+      const progressBar = document.createElement("div");
+      progressBar.className = "h-full transition-all duration-500";
+      progCont.appendChild(progressBar);
+      updateProgressBar(progressBar, status);
+
+      li.append(top, progCont);
+      taskList.appendChild(li);
+    }
+
+    function updateProgressBar(bar, status) {
+      const styles = {
+        Pendiente: "w-[10%] bg-gray-400",
+        Haciendo:  "w-[50%] bg-blue-500",
+        Pausado:   "w-[50%] bg-yellow-400",
+        Terminado: "w-[100%] bg-green-500",
+        Enviado:   "w-[100%] bg-purple-500"
+      };
+      bar.className = `h-full transition-all duration-500 ${styles[status] || styles.Pendiente}`;
+    }
+  </script>
+</body>
+</html>

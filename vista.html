@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vista Pedido Estado</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 min-h-screen flex flex-col">
+  <header class="bg-blue-600 text-white py-6 text-center">
+    <h1 class="text-3xl font-bold">Vista de Pedido Estado</h1>
+  </header>
+
+  <main class="flex-1 p-6 max-w-4xl mx-auto w-full space-y-6">
+    <!-- Buscador y filtros -->
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+      <h2 class="text-white text-xl font-bold mb-4">Buscar y Filtrar</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Buscar por texto -->
+        <div>
+          <label for="search-text" class="block text-white text-sm font-medium mb-2">Buscar por Nombre/Descripción</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input type="text" id="search-text" class="w-full p-2 pl-10 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escribe para buscar...">
+          </div>
+        </div>
+        
+        <!-- Filtrar por fecha -->
+        <div>
+          <label for="search-date" class="block text-white text-sm font-medium mb-2">Filtrar por Fecha</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <input type="date" id="search-date" class="w-full p-2 pl-10 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+        
+        <!-- Filtrar por estado -->
+        <div>
+          <label for="search-status" class="block text-white text-sm font-medium mb-2">Filtrar por Estado</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+              </svg>
+            </div>
+            <select id="search-status" class="w-full p-2 pl-10 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Todos los estados</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Haciendo">Haciendo</option>
+              <option value="Pausado">Pausado</option>
+              <option value="Terminado">Terminado</option>
+              <option value="Enviado">Enviado</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex justify-end mt-4">
+        <button id="clear-filters" class="bg-gray-600 hover:bg-gray-500 text-white font-medium py-2 px-4 rounded transition-colors flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+    
+    <!-- Contador de resultados -->
+    <div class="text-white font-medium">
+      <span id="task-count">0</span> tareas encontradas
+    </div>
+    
+    <!-- Lista de tareas -->
+    <ul id="task-list" class="space-y-6"></ul>
+    
+    <!-- Mensaje cuando no hay resultados -->
+    <div id="no-results" class="hidden text-center py-12">
+      <p class="text-gray-400 text-xl">No se encontraron tareas con los filtros aplicados</p>
+      </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, Timestamp, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC26tExI2Qzm_dczDvGRx58M_9b4qD3Ajw",
+      authDomain: "tareas-d2893.firebaseapp.com",
+      projectId: "tareas-d2893",
+      storageBucket: "tareas-d2893.appspot.com",
+      messagingSenderId: "930777625775",
+      appId: "1:930777625775:web:347b4c3814d99d163ad05a",
+      measurementId: "G-N1WRTWBEBM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const taskList = document.getElementById('task-list');
+    const noResults = document.getElementById('no-results');
+    const taskCount = document.getElementById('task-count');
+    
+    // Elementos de búsqueda
+    const searchText = document.getElementById('search-text');
+    const searchDate = document.getElementById('search-date');
+    const searchStatus = document.getElementById('search-status');
+    const clearFilters = document.getElementById('clear-filters');
+    
+    // Almacenar todas las tareas
+    let allTasks = [];
+
+    // Escuchar cambios en la colección de tareas
+    onSnapshot(collection(db, "tareas"), (snapshot) => {
+      allTasks = [];
+      snapshot.forEach(doc => {
+        const task = doc.data();
+        // Asegurarnos de que tenemos un ID
+        task.id = doc.id;
+        
+        // Procesar y normalizar la fecha (si existe)
+        if (task.fecha) {
+          // Si es un timestamp de Firebase
+          if (task.fecha instanceof Timestamp) {
+            task.fechaObj = task.fecha.toDate();
+            task.fechaFormateada = formatDate(task.fechaObj);
+          } 
+          // Si es una cadena que representa una fecha
+          else if (typeof task.fecha === 'string') {
+            try {
+              task.fechaObj = new Date(task.fecha);
+              task.fechaFormateada = formatDate(task.fechaObj);
+            } catch (e) {
+              console.log('Error al convertir fecha:', e);
+              task.fechaFormateada = task.fecha; // Usar el string original
+            }
+          }
+        } 
+        // Si no hay fecha pero hay createdAt
+        else if (task.createdAt) {
+          if (task.createdAt instanceof Timestamp) {
+            task.fechaObj = task.createdAt.toDate();
+            task.fechaFormateada = formatDate(task.fechaObj);
+          } else if (task.createdAt instanceof Date) {
+            task.fechaObj = task.createdAt;
+            task.fechaFormateada = formatDate(task.fechaObj);
+          }
+        }
+        
+        allTasks.push(task);
+      });
+      
+      // Aplicar filtros actuales
+      applyFilters();
+    });
+
+    // Formatear fecha para mostrar
+    function formatDate(date) {
+      if (!date || !(date instanceof Date) || isNaN(date)) return '';
+      return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+    
+    // Convertir string de fecha YYYY-MM-DD a objeto Date
+    function parseInputDate(dateString) {
+      if (!dateString) return null;
+      const [year, month, day] = dateString.split('-');
+      return new Date(year, month - 1, day); // Mes en JavaScript es 0-indexado
+    }
+    
+    // Función para aplicar todos los filtros
+    function applyFilters() {
+      const textFilter = searchText.value.toLowerCase();
+      const dateFilter = searchDate.value ? parseInputDate(searchDate.value) : null;
+      const statusFilter = searchStatus.value;
+      
+      // Filtrar las tareas
+      const filteredTasks = allTasks.filter(task => {
+        // Filtro de texto (busca en text, nombre o cualquier campo de texto relevante)
+        const textMatch = !textFilter || 
+          (task.text && task.text.toLowerCase().includes(textFilter)) ||
+          (task.nombre && task.nombre.toLowerCase().includes(textFilter));
+        
+        // Filtro de fecha
+        let dateMatch = true;
+        if (dateFilter) {
+          // Si tenemos un objeto de fecha procesado
+          if (task.fechaObj instanceof Date) {
+            dateMatch = task.fechaObj.getFullYear() === dateFilter.getFullYear() &&
+                      task.fechaObj.getMonth() === dateFilter.getMonth() &&
+                      task.fechaObj.getDate() === dateFilter.getDate();
+          } else {
+            dateMatch = false; // Si no hay fecha en la tarea, no coincide con el filtro
+          }
+        }
+        
+        // Filtro de estado
+        const statusMatch = !statusFilter || task.status === statusFilter;
+        
+        // Debe coincidir con todos los filtros activos
+        return textMatch && dateMatch && statusMatch;
+      });
+      
+      // Renderizar los resultados filtrados
+      renderTasks(filteredTasks);
+    }
+    
+    // Función para renderizar la lista de tareas
+    function renderTasks(tasks) {
+      taskList.innerHTML = "";
+      taskCount.textContent = tasks.length;
+      
+      if (tasks.length === 0) {
+        noResults.classList.remove('hidden');
+      } else {
+        noResults.classList.add('hidden');
+        
+        // Ordenar tareas por fecha (más recientes primero)
+        const sortedTasks = [...tasks].sort((a, b) => {
+          // Si ambas tareas tienen fechaObj (Date)
+          if (a.fechaObj && b.fechaObj) {
+            return b.fechaObj - a.fechaObj; // Ordenar descendente (más reciente primero)
+          }
+          // Si solo una tarea tiene fechaObj
+          if (a.fechaObj) return -1;
+          if (b.fechaObj) return 1;
+          return 0;
+        });
+        
+        sortedTasks.forEach(task => {
+          renderTask(
+            task.text, 
+            task.status, 
+            task.fechaFormateada || ''
+          );
+        });
+      }
+    }
+
+    function renderTask(text, status, fecha = '') {
+      const li = document.createElement('li');
+      li.className = "bg-white p-4 rounded shadow space-y-4";
+
+      const taskTop = document.createElement('div');
+      taskTop.className = "flex flex-col md:flex-row md:justify-between md:items-center gap-2";
+
+      const span = document.createElement('span');
+      span.innerHTML = (text || "Sin descripción").replace(/\n/g, '<br>');
+      span.className = "flex-1 font-semibold";
+
+      const rightSection = document.createElement('div');
+      rightSection.className = "flex items-center gap-4";
+
+      // Añadir fecha con mejor formato y estilo
+      if (fecha) {
+        const dateLabel = document.createElement('span');
+        dateLabel.textContent = fecha;
+        dateLabel.className = "text-sm bg-gray-100 px-2 py-1 rounded text-gray-700";
+        rightSection.appendChild(dateLabel);
+      }
+
+      const statusLabel = document.createElement('span');
+      statusLabel.textContent = status || "Pendiente";
+      statusLabel.className = "text-sm font-bold px-3 py-1 rounded-full";
+      // Estilo condicional para el estado
+      switch (status) {
+        case 'Pendiente':
+          statusLabel.classList.add('bg-gray-200', 'text-gray-800');
+          break;
+        case 'Haciendo':
+          statusLabel.classList.add('bg-blue-100', 'text-blue-800');
+          break;
+        case 'Pausado':
+          statusLabel.classList.add('bg-yellow-100', 'text-yellow-800');
+          break;
+        case 'Terminado':
+          statusLabel.classList.add('bg-green-100', 'text-green-800');
+          break;
+        case 'Enviado':
+          statusLabel.classList.add('bg-purple-100', 'text-purple-800');
+          break;
+      }
+      rightSection.appendChild(statusLabel);
+
+      const progressContainer = document.createElement('div');
+      progressContainer.className = "w-full h-4 bg-gray-200 rounded overflow-hidden";
+
+      const progressBar = document.createElement('div');
+      progressBar.className = "h-full transition-all duration-500";
+      updateProgress(progressBar, status);
+      progressContainer.appendChild(progressBar);
+
+      taskTop.appendChild(span);
+      taskTop.appendChild(rightSection);
+      li.appendChild(taskTop);
+      li.appendChild(progressContainer);
+      taskList.appendChild(li);
+    }
+
+    function updateProgress(bar, status) {
+      const styles = {
+        Pendiente: "w-[10%] bg-gray-400",
+        Haciendo: "w-[50%] bg-blue-500",
+        Pausado: "w-[50%] bg-yellow-400",
+        Terminado: "w-[100%] bg-green-500",
+        Enviado: "w-[100%] bg-purple-500"
+      };
+      bar.className = `h-full transition-all duration-500 ${styles[status] || "w-[10%] bg-gray-400"}`;
+    }
+    
+    // Escuchar eventos de cambio en los filtros
+    searchText.addEventListener('input', applyFilters);
+    searchDate.addEventListener('change', applyFilters);
+    searchStatus.addEventListener('change', applyFilters);
+    
+    // Botón para limpiar filtros
+    clearFilters.addEventListener('click', () => {
+      searchText.value = '';
+      searchDate.value = '';
+      searchStatus.value = '';
+      applyFilters();
+    });
+  </script>
+  
+</body>
+</html>
